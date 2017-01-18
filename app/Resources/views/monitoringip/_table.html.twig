@@ -1,0 +1,23 @@
+<h1>Interface {{ interface }} Octects</h1>
+<table class="table table-striped" id="table">
+    <thead>
+        <tr>
+            <th>In Octects (Mbps)</th>
+            <th>Out Octects (Mbps)</th>
+            <th>Bandwidth (Mbps)</th>
+            <th>If Speed (Mbps)</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for snmp in snmpList %}
+            <tr>
+                <td>{{ snmp.ifInOctects }}</td>
+                <td>{{ snmp.ifOutOctects }}</td>
+                <td>{{ snmp.bandWidth }}</td>
+                <td>{{ snmp.ifSpeed }}</td>
+                <td>{{ snmp.createdDate|date("d-m-Y h:m:s") }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
