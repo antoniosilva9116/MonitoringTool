@@ -17,8 +17,8 @@ class SNMPController extends Controller
 {
     var $timeout = 1000000;
     var $networkInterface = '22';
-    var $lastInOctet;
-    var $lastOutOctet;
+    var $lastInUtilization;
+    var $lastOutUtilization;
     var $lastIfInOctet;
     var $lastIfOutOctet;
     var $lastIfSpeed;
@@ -56,9 +56,9 @@ class SNMPController extends Controller
 
         $snmp = new OctetsInterface();
         $snmp->setIfOutOctects($this->lastIfOutOctet);
-        $snmp->setIfInOctects($this->lastInOctet);
+        $snmp->setIfInOctects($this->lastInUtilization);
         $snmp->setBandWidth($this->bandWidth);
-        $snmp->setIfSpeed(($this->lastIfSpeed/1048576));
+        $snmp->setIfSpeed(($this->lastIfSpeed));
         $snmp->setCreatedDate(new \DateTime());
         $snmp->setIpAddress($ipAddress);
 
@@ -169,15 +169,15 @@ class SNMPController extends Controller
             $poolTime
         );
 
-        $this->lastInOctet =  (((($ifInOctect2 - $ifInOctet1))/$poolTime)*8)/1048576;
-        $this->lastIfOutOctet = (((($ifOutOctect2 - $ifOutOctet1))/$poolTime)*8)/1048576;
-        $this->lastIfSpeed = $ifSpeed;
+        $this->lastInUtilization =  ((($ifInOctect2 - $ifInOctet1)*8)/($poolTime*$ifSpeed))/1048576;
+        $this->lastOutUtilization = (((($ifOutOctect2 - $ifOutOctet1)*8)/($poolTime*$ifSpeed)))/1048576;
+        $this->lastIfSpeed = $ifSpeed/1048576;
 
         $this->lastIfInOctet = $ifInOctect2;
         $this->lastIfOutOctet = $ifOutOctect2;
     }
 
-    public function calcNetworkBandwidth($ifOutOctects, $ifInOctets, $ifSpeed, $poolTime)
+    public function calcNetworkBandwidth($ifOutOctects, $ifInOctets, $ifSpeed, $pollTime)
     {
         $total = ($ifOutOctects+$ifInOctets);
 
@@ -185,10 +185,10 @@ class SNMPController extends Controller
             $networkSpeed = 0;
         }
         else {
-            $networkSpeed = $total/(($ifSpeed/1048576));
+            $networkSpeed = $total/(($ifSpeed*$pollTime));
         }
 
-        return $networkSpeed;
+        return $networkSpeed/1048576;
     }
 
     /**
@@ -201,16 +201,16 @@ class SNMPController extends Controller
 
         $bandWidth = $this->calcNetworkBandwidth(
             $this->lastIfOutOctet,
-            $this->lastInOctet,
+            $this->lastInUtilization,
             $this->lastIfSpeed,
             10
         );
 
         $snmp = new OctetsInterface();
         $snmp->setIfOutOctects($this->lastIfOutOctet);
-        $snmp->setIfInOctects($this->lastInOctet);
+        $snmp->setIfInOctects($this->lastInUtilization);
         $snmp->setBandWidth($bandWidth);
-        $snmp->setIfSpeed(($this->lastIfSpeed/1048576));
+        $snmp->setIfSpeed(($this->lastIfSpeed));
         $snmp->setCreatedDate(new \DateTime());
         $snmp->setIpAddress($ipAddress);
 

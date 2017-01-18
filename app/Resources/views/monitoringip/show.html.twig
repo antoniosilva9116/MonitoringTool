@@ -54,7 +54,7 @@
                 url: "{{ path('snmp_new', {'ipAddress': ip})}}",
                 type: 'GET',
                 success: function(output) {
-                    $('body').html(output);
+                    $('#table').html(output);
                     {{ gc_draw([lineChartInOctets, lineChartOutOctets ],['lineChartInOctets', 'lineChartOutOctets']) }}
                     $('#table').DataTable();
                 }
