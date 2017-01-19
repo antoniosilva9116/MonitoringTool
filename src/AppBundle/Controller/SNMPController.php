@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints\Date;
 class SNMPController extends Controller
 {
     var $timeout = 1000000;
-    var $networkInterface = '22';
+    var $networkInterface;
     var $lastInUtilization;
     var $lastOutUtilization;
     var $lastIfInOctet;
@@ -41,26 +41,77 @@ class SNMPController extends Controller
             ]);
         }
 
+        $i = 0;
+
+        $val1 = snmp2_walk('localhost', 'public', '1.3.6.1.2.1.1.3.0', 1000000, 1);
+        $values = array();
+
+        array_push($values, $val1[0]);
+
+        while($i < 3){
+
+            $val2 = snmp2_walk('localhost', 'public', '1.3.6.1.2.1.1.3.0', 1000000, 1);
+
+            if($val1 != $val2){
+                array_push($values, $val2[0]);
+                $i++;
+                $val1 = $val2;
+            }
+        }
+
+
         return $this->render('main/homepage.html.twig',[
             'snmpForm' => $form->createView(),
+            'values' => $values
         ]);
+    }
+
+    public function convertValues($values)
+    {
+        $interfaces = array();
+
+        foreach($values as $value){
+            array_push($interfaces, explode(':', $value)[1]);
+        }
+
+        return $interfaces;
+    }
+
+    /**
+     * @Route("/{ipAddress}/interfaces", name="snmp_interfaces")
+     */
+    public function interfaceAction($ipAddress)
+    {
+        $values = snmp2_walk($ipAddress, 'public', '1.3.6.1.2.1.2.2.1.2', $this->timeout, 1);
+
+        $interfaces = $this->convertValues($values);
+
+        return $this->render('interface/show.html.twig', [
+            'ip' => $ipAddress,
+            'interfaces' => $interfaces
+        ]);
+
     }
 
 
     /**
-     * @Route("/snmp/{ipAddress}", name="snmp_show")
+     * @Route("/snmp/{ipAddress}/{interface}", name="snmp_show")
      */
-    public function showAction($ipAddress)
+    public function showAction($ipAddress, $interface = '22')
     {
-        $this->calcValues($ipAddress, 10);
+        $this->networkInterface = $interface;
+
+        $this->calcValues($ipAddress, 20);
 
         $snmp = new OctetsInterface();
-        $snmp->setIfOutOctects($this->lastIfOutOctet);
+        $snmp->setIfOutOctects($this->lastOutUtilization);
         $snmp->setIfInOctects($this->lastInUtilization);
         $snmp->setBandWidth($this->bandWidth);
         $snmp->setIfSpeed(($this->lastIfSpeed));
         $snmp->setCreatedDate(new \DateTime());
         $snmp->setIpAddress($ipAddress);
+        $snmp->setInterface($interface);
+
 
         $em = $this->getDoctrine()->getManager();
         $em->persist($snmp);
@@ -68,7 +119,8 @@ class SNMPController extends Controller
 
         $snmpList = $this->getDoctrine()->getRepository('AppBundle:OctetsInterface')
             ->findBy([
-                'ipAddress' => $ipAddress
+                'ipAddress' => $ipAddress,
+                'interface' => $interface
             ]);
 
         $lineChartInOctets = $this->createChart($snmpList, 'inoctets');
@@ -91,7 +143,7 @@ class SNMPController extends Controller
         if($option == 'inoctets'){
 
             $lineChart->getData()->setArrayToDataTable([
-                ['Day', 'In Octets (Mbps)'],
+                ['Day', 'In Octets (bps)'],
             ]);
 
             $values = $lineChart->getData()->getArrayToDataTable();
@@ -105,7 +157,7 @@ class SNMPController extends Controller
             $lineChart->getData()->setArrayToDataTable($values);
 
             $lineChart->getOptions()->getChart()
-                ->setTitle('In octets in Network Interface');
+                ->setTitle('Input utilization in Network Interface');
 
             return $lineChart;
         }
@@ -113,7 +165,7 @@ class SNMPController extends Controller
         if($option == 'outoctets'){
 
             $lineChart->getData()->setArrayToDataTable([
-                ['Day', 'Out Octets (Mbps)'],
+                ['Day', 'Output Utilization (bps)'],
             ]);
 
             $values = $lineChart->getData()->getArrayToDataTable();
@@ -127,7 +179,7 @@ class SNMPController extends Controller
             $lineChart->getData()->setArrayToDataTable($values);
 
             $lineChart->getOptions()->getChart()
-                ->setTitle('Out Octets in the Network Interface');
+                ->setTitle('Output utilization in the Network Interface');
 
 
             return $lineChart;
@@ -138,8 +190,7 @@ class SNMPController extends Controller
 
     public function calcValues($ipAddress, $poolTime)
     {
-        if ($this->lastIfInOctet == null && $this->lastIfInOctet <= 0 &&
-            $this->lastIfOutOctet == null && $this->lastIfOutOctet <= 0) {
+        if ($this->lastIfInOctet == null && $this->lastIfOutOctet == null) {
             $ifInOctects = explode(':', snmp2_walk($ipAddress, 'public', '1.3.6.1.2.1.2.2.1.10.'
                 . $this->networkInterface, $this->timeout, 1)[0]);
             $ifOutOctects = explode(':', snmp2_walk($ipAddress, 'public', '1.3.6.1.2.1.2.2.1.16.'
@@ -152,6 +203,10 @@ class SNMPController extends Controller
             $ifSpeed = intval($ifSpeed[1]);
 
             sleep($poolTime);
+        } else{
+            $ifInOctet1 = $this->lastIfInOctet;
+            $ifOutOctet1 = $this->lastIfOutOctet;
+            $ifSpeed = $this->lastIfSpeed;
         }
 
         $ifInOctects = explode(':',snmp2_walk($ipAddress, 'public', '.1.3.6.1.2.1.2.2.1.10.'
@@ -169,9 +224,23 @@ class SNMPController extends Controller
             $poolTime
         );
 
-        $this->lastInUtilization =  ((($ifInOctect2 - $ifInOctet1)*8)/($poolTime*$ifSpeed))/1048576;
-        $this->lastOutUtilization = (((($ifOutOctect2 - $ifOutOctet1)*8)/($poolTime*$ifSpeed)))/1048576;
-        $this->lastIfSpeed = $ifSpeed/1048576;
+        if($ifSpeed > 0) {
+/*            $this->lastInUtilization = ((($ifInOctect2 - $ifInOctet1) * 8 * 100) / ($poolTime * $ifSpeed)) / 1048576;
+            $this->lastOutUtilization = ((($ifOutOctect2 - $ifOutOctet1) * 8 * 100) / ($poolTime * $ifSpeed)) / 1048576;*/
+//            $this->lastInUtilization = ((($ifInOctect2 - $ifInOctet1)) / ($poolTime * $ifSpeed));
+//            $this->lastOutUtilization = ((($ifOutOctect2 - $ifOutOctet1)) / ($poolTime * $ifSpeed));
+
+            $this->lastInUtilization = ((($ifInOctect2 - $ifInOctet1) * 8 * 100) / ($poolTime * $ifSpeed));
+            $this->lastOutUtilization = ((($ifOutOctect2 - $ifOutOctet1) * 8 * 100) / ($poolTime * $ifSpeed));
+            //$this->lastIfSpeed = $ifSpeed / 1048576;
+            $this->lastIfSpeed = $ifSpeed;
+
+        } else{
+            $this->lastInUtilization = 0;
+            $this->lastOutUtilization = 0;
+            //$this->lastIfSpeed = $ifSpeed / 1048576;
+            $this->lastIfSpeed = $ifSpeed;
+        }
 
         $this->lastIfInOctet = $ifInOctect2;
         $this->lastIfOutOctet = $ifOutOctect2;
@@ -179,7 +248,7 @@ class SNMPController extends Controller
 
     public function calcNetworkBandwidth($ifOutOctects, $ifInOctets, $ifSpeed, $pollTime)
     {
-        $total = ($ifOutOctects+$ifInOctets);
+        $total = ($ifOutOctects+$ifInOctets)*8*100;
 
         if($ifSpeed == 0) {
             $networkSpeed = 0;
@@ -188,31 +257,30 @@ class SNMPController extends Controller
             $networkSpeed = $total/(($ifSpeed*$pollTime));
         }
 
-        return $networkSpeed/1048576;
+        //return $networkSpeed/1048576;
+        return $networkSpeed;
+
     }
 
     /**
-     * @Route("/snmp/{ipAddress}/new", name="snmp_new")
+     * @Route("/snmp/{ipAddress}/{interface}/new", name="snmp_new")
      * @Method("GET")
      */
-    public function getOctectsAction($ipAddress)
+    public function getOctectsAction($ipAddress, $interface = '22')
     {
-        $this->calcValues($ipAddress, 10);
+        $this->networkInterface = $interface;
 
-        $bandWidth = $this->calcNetworkBandwidth(
-            $this->lastIfOutOctet,
-            $this->lastInUtilization,
-            $this->lastIfSpeed,
-            10
-        );
+        $this->calcValues($ipAddress, 20);
 
         $snmp = new OctetsInterface();
-        $snmp->setIfOutOctects($this->lastIfOutOctet);
+        $snmp->setIfOutOctects($this->lastOutUtilization);
         $snmp->setIfInOctects($this->lastInUtilization);
-        $snmp->setBandWidth($bandWidth);
+        $snmp->setBandWidth($this->bandWidth);
         $snmp->setIfSpeed(($this->lastIfSpeed));
         $snmp->setCreatedDate(new \DateTime());
         $snmp->setIpAddress($ipAddress);
+        $snmp->setInterface($interface);
+
 
         $em = $this->getDoctrine()->getManager();
         $em->persist($snmp);
@@ -220,13 +288,14 @@ class SNMPController extends Controller
 
         $snmpList = $this->getDoctrine()->getRepository('AppBundle:OctetsInterface')
             ->findBy([
-                'ipAddress' => $ipAddress
+                'ipAddress' => $ipAddress,
+                'interface' => $interface
             ]);
 
         $lineChartInOctets = $this->createChart($snmpList, 'inoctets');
         $lineChartOutOctets = $this->createChart($snmpList, 'outoctets');
 
-        return $this->render(':monitoringip:show.html.twig', [
+        return $this->render(':monitoringip:_content.html.twig', [
             'ip' => $ipAddress,
             'snmpList' => $snmpList,
             'interface' => $this->networkInterface,

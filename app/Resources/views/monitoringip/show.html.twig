@@ -11,34 +11,9 @@
 {% block body %}
     <h2 class="genus-name">IP Address {{ ip }}</h2>
 
-    <div class="container" id="tableContent">
-        <div class="row">
-
-            <div class="col-lg-12">
-                <div id="tableContent">
-                    {{ include(':monitoringip:_table.html.twig', {'snmpList': snmpList}) }}
-                </div>
-            </div>
-
-        </div>
+    <div id="content">
+        {{ include(':monitoringip:_content.html.twig', {'snmpList': snmpList}) }}
     </div>
-    <div class="container">
-        <h1>Charts of the Interface {{ interface }}</h1>
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="col-md-6">
-                    <div id="lineChartInOctets">
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div id="lineChartOutOctets">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
 
 {% endblock %}
 {% block javascripts %}
@@ -51,15 +26,13 @@
     <script type="text/javascript">
         var auto_refresh = setInterval(function () {
             $.ajax({
-                url: "{{ path('snmp_new', {'ipAddress': ip})}}",
+                url: "{{ path('snmp_new', {'ipAddress': ip, 'interface': interface})}}",
                 type: 'GET',
                 success: function(output) {
-                    $('#table').html(output);
-                    {{ gc_draw([lineChartInOctets, lineChartOutOctets ],['lineChartInOctets', 'lineChartOutOctets']) }}
-                    $('#table').DataTable();
+                    $('#content').html(output);
                 }
             });
-        }, 10000);
+        }, 20000);
     </script>
     <script>
         $(document).ready(function () {

@@ -12,13 +12,16 @@
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
     </head>
     <body>
+    {% block searchBar %}
         <div class="search-bar">
             <form name="snmp_form" method="post" class="js-sea-search sea-search">
                 <input id="snmp_form_ipAddress" type="search" name="snmp_form[ipAddress]" placeholder="Search Ip Address"
                        autocomplete="off" class="search-input">
             </form>
         </div>
-        <header class="header">
+    {% endblock %}
+
+    <header class="header">
             <img class="logo-icon" src="{{ asset('images/aquanote-logo.png') }}">
             <h1 class="logo">MonitoringTool</h1>
             <ul class="navi">
@@ -47,7 +50,7 @@
             <script type="application/javascript">
                 function redirect() {
                     var ipAddress = $('#snmp_form_ipAddress').val();
-                    var url = '{{ path('snmp_show', {'ipAddress': 'text'}) }}';
+                    var url = '{{ path('snmp_interfaces', {'ipAddress': 'text'}) }}';
                     url = url.replace("text", ipAddress);
                     window.location.replace(url);
                 }

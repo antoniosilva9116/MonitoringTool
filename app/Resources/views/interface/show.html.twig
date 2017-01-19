@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="//cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css">
+
+{% endblock %}
+
+{% block searchBar %}
+    <div class="search-bar">
+        <form name="snmp_form" method="post" class="js-sea-search sea-search">
+            <input id="snmp_form_ipAddress" type="search" name="snmp_form[ipAddress]" placeholder="Put the interface"
+                   autocomplete="off" class="search-input">
+        </form>
+    </div>
+{% endblock %}
+
+
+{% block body %}
+    <h2 class="genus-name">IP Address {{ ip }}</h2>
+<div class="container" id="tableContent">
+    <div class="row">
+
+        <div class="col-lg-12">
+            <div id="tableContent">
+                <table class="table" id="interfaces">
+                    <thead>
+                        <tr>
+                            <th>Interface Number</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for interface in interfaces %}
+
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ interface }}</td>
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="//cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#interfaces').DataTable();
+        });
+    </script>
+    <script type="application/javascript">
+        function redirect() {
+            var interface = $('#snmp_form_ipAddress').val();
+            var url = '{{ path('snmp_show', {'ipAddress': 'text1', 'interface': 'text2'}) }}';
+
+            url = url.replace("text1", '{{ ip }}');
+            url = url.replace("text2", interface);
+
+            window.location.replace(url);
+        }
+    </script>
+
+{% endblock %}
+
+

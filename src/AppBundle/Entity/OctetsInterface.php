@@ -56,6 +56,27 @@ class OctetsInterface
     private $ipAddress;
 
     /**
+     * @ORM\Column(type="string")
+     */
+    private $interface;
+
+    /**
+     * @return mixed
+     */
+    public function getInterface()
+    {
+        return $this->interface;
+    }
+
+    /**
+     * @param mixed $interface
+     */
+    public function setInterface($interface)
+    {
+        $this->interface = $interface;
+    }
+
+    /**
      * @return mixed
      */
     public function getSnmpID()
