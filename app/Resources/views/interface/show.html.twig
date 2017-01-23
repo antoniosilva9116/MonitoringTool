@@ -28,6 +28,8 @@
                         <tr>
                             <th>Interface Number</th>
                             <th>Description</th>
+                            <th>Interface Type</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -36,6 +38,9 @@
                             <tr>
                                 <td>{{ loop.index }}</td>
                                 <td>{{ interface }}</td>
+                                <td>{{ types[loop.index-1] }}</td>
+                                <td>{{ status[loop.index-1] }}</td>
+
                             </tr>
 
                         {% endfor %}

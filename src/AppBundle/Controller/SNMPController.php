@@ -41,28 +41,8 @@ class SNMPController extends Controller
             ]);
         }
 
-        $i = 0;
-
-        $val1 = snmp2_walk('localhost', 'public', '1.3.6.1.2.1.1.3.0', 1000000, 1);
-        $values = array();
-
-        array_push($values, $val1[0]);
-
-        while($i < 3){
-
-            $val2 = snmp2_walk('localhost', 'public', '1.3.6.1.2.1.1.3.0', 1000000, 1);
-
-            if($val1 != $val2){
-                array_push($values, $val2[0]);
-                $i++;
-                $val1 = $val2;
-            }
-        }
-
-
         return $this->render('main/homepage.html.twig',[
             'snmpForm' => $form->createView(),
-            'values' => $values
         ]);
     }
 
@@ -83,12 +63,20 @@ class SNMPController extends Controller
     public function interfaceAction($ipAddress)
     {
         $values = snmp2_walk($ipAddress, 'public', '1.3.6.1.2.1.2.2.1.2', $this->timeout, 1);
-
         $interfaces = $this->convertValues($values);
+
+        $values = snmp2_walk($ipAddress, 'public', '1.3.6.1.2.1.2.2.1.3', $this->timeout, 1);
+        $types = $this->convertValues($values);
+
+        $values = snmp2_walk($ipAddress, 'public', '1.3.6.1.2.1.2.2.1.8', $this->timeout, 1);
+        $status = $this->convertValues($values);
 
         return $this->render('interface/show.html.twig', [
             'ip' => $ipAddress,
-            'interfaces' => $interfaces
+            'interfaces' => $interfaces,
+            'types' => $types,
+            'status' => $status
+
         ]);
 
     }
