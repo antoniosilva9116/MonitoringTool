@@ -19,6 +19,8 @@ class SNMPController extends Controller
     var $networkInterface;
     var $lastInUtilization;
     var $lastOutUtilization;
+    var $ifInOctets;
+    var $ifOutOctets;
     var $lastIfInOctet;
     var $lastIfOutOctet;
     var $lastIfSpeed;
@@ -92,8 +94,10 @@ class SNMPController extends Controller
         $this->calcValues($ipAddress, 20);
 
         $snmp = new OctetsInterface();
-        $snmp->setIfOutOctects($this->lastOutUtilization);
-        $snmp->setIfInOctects($this->lastInUtilization);
+        $snmp->setOutputUtilization($this->lastOutUtilization);
+        $snmp->setInputUtilization($this->lastInUtilization);
+        $snmp->setIfOutOctects($this->ifOutOctets);
+        $snmp->setIfInOctects($this->ifInOctets);
         $snmp->setBandWidth($this->bandWidth);
         $snmp->setIfSpeed(($this->lastIfSpeed));
         $snmp->setCreatedDate(new \DateTime());
@@ -131,7 +135,7 @@ class SNMPController extends Controller
         if($option == 'inoctets'){
 
             $lineChart->getData()->setArrayToDataTable([
-                ['Day', 'In Octets (bps)'],
+                ['Day', 'In octets (bytes)'],
             ]);
 
             $values = $lineChart->getData()->getArrayToDataTable();
@@ -145,7 +149,7 @@ class SNMPController extends Controller
             $lineChart->getData()->setArrayToDataTable($values);
 
             $lineChart->getOptions()->getChart()
-                ->setTitle('Input utilization in Network Interface');
+                ->setTitle('In Octets in Network Interface');
 
             return $lineChart;
         }
@@ -153,7 +157,7 @@ class SNMPController extends Controller
         if($option == 'outoctets'){
 
             $lineChart->getData()->setArrayToDataTable([
-                ['Day', 'Output Utilization (bps)'],
+                ['Day', 'Out octets (bytes)'],
             ]);
 
             $values = $lineChart->getData()->getArrayToDataTable();
@@ -167,7 +171,7 @@ class SNMPController extends Controller
             $lineChart->getData()->setArrayToDataTable($values);
 
             $lineChart->getOptions()->getChart()
-                ->setTitle('Output utilization in the Network Interface');
+                ->setTitle('Out octets in the Network Interface');
 
 
             return $lineChart;
@@ -213,20 +217,18 @@ class SNMPController extends Controller
         );
 
         if($ifSpeed > 0) {
-/*            $this->lastInUtilization = ((($ifInOctect2 - $ifInOctet1) * 8 * 100) / ($poolTime * $ifSpeed)) / 1048576;
-            $this->lastOutUtilization = ((($ifOutOctect2 - $ifOutOctet1) * 8 * 100) / ($poolTime * $ifSpeed)) / 1048576;*/
-//            $this->lastInUtilization = ((($ifInOctect2 - $ifInOctet1)) / ($poolTime * $ifSpeed));
-//            $this->lastOutUtilization = ((($ifOutOctect2 - $ifOutOctet1)) / ($poolTime * $ifSpeed));
 
             $this->lastInUtilization = ((($ifInOctect2 - $ifInOctet1) * 8 * 100) / ($poolTime * $ifSpeed));
             $this->lastOutUtilization = ((($ifOutOctect2 - $ifOutOctet1) * 8 * 100) / ($poolTime * $ifSpeed));
-            //$this->lastIfSpeed = $ifSpeed / 1048576;
+            $this->ifInOctets = ((($ifInOctect2 - $ifInOctet1)));
+            $this->ifOutOctets = ((($ifOutOctect2 - $ifOutOctet1)));
             $this->lastIfSpeed = $ifSpeed;
 
         } else{
             $this->lastInUtilization = 0;
             $this->lastOutUtilization = 0;
-            //$this->lastIfSpeed = $ifSpeed / 1048576;
+            $this->ifInOctets = 0;
+            $this->ifOutOctets = 0;
             $this->lastIfSpeed = $ifSpeed;
         }
 
@@ -261,8 +263,10 @@ class SNMPController extends Controller
         $this->calcValues($ipAddress, 20);
 
         $snmp = new OctetsInterface();
-        $snmp->setIfOutOctects($this->lastOutUtilization);
-        $snmp->setIfInOctects($this->lastInUtilization);
+        $snmp->setOutputUtilization($this->lastOutUtilization);
+        $snmp->setInputUtilization($this->lastInUtilization);
+        $snmp->setIfOutOctects($this->ifOutOctets);
+        $snmp->setIfInOctects($this->ifInOctets);
         $snmp->setBandWidth($this->bandWidth);
         $snmp->setIfSpeed(($this->lastIfSpeed));
         $snmp->setCreatedDate(new \DateTime());

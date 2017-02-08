@@ -7,6 +7,8 @@
                 <table class="table table-striped" id="table">
                     <thead>
                     <tr>
+                        <th>In Octets (bytes)</th>
+                        <th>Out Octets (bytes)</th>
                         <th>Input Utilization (bps)</th>
                         <th>Output Utilization (bps)</th>
                         <th>Bandwidth (bps)</th>
@@ -19,6 +21,8 @@
                         <tr>
                             <td>{{ snmp.ifInOctects|number_format(3,'.',',') }}</td>
                             <td>{{ snmp.ifOutOctects|number_format(3,'.',',') }}</td>
+                            <td>{{ snmp.inputUtilization|number_format(3,'.',',') }}</td>
+                            <td>{{ snmp.outputUtilization|number_format(3,'.',',') }}</td>
                             <td>{{ snmp.bandWidth|number_format(3,'.',',') }}</td>
                             <td>{{ snmp.ifSpeed|number_format(2,'.',',') ~ '/' ~
                                 (snmp.ifSpeed/1048576)|number_format(2,'.',',')

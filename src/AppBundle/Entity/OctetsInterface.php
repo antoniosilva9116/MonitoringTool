@@ -38,6 +38,16 @@ class OctetsInterface
     /**
      * @ORM\Column(type="float")
      */
+    private $inputUtilization;
+
+    /**
+     * @ORM\Column(type="float")
+     */
+    private $outputUtilization;
+
+    /**
+     * @ORM\Column(type="float")
+     */
     private $bandWidth;
 
     /**
@@ -186,6 +196,38 @@ class OctetsInterface
     public function setIpAddress($ipAddress)
     {
         $this->ipAddress = $ipAddress;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getInputUtilization()
+    {
+        return $this->inputUtilization;
+    }
+
+    /**
+     * @param mixed $inputUtilization
+     */
+    public function setInputUtilization($inputUtilization)
+    {
+        $this->inputUtilization = $inputUtilization;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOutputUtilization()
+    {
+        return $this->outputUtilization;
+    }
+
+    /**
+     * @param mixed $outputUtilization
+     */
+    public function setOutputUtilization($outputUtilization)
+    {
+        $this->outputUtilization = $outputUtilization;
     }
 
 }
